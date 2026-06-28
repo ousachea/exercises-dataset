@@ -11,7 +11,7 @@
   <img src="images/0334-DsgkuIt.jpg" width="140" style="border-radius:8px; margin:4px;" />
 </p>
 
-**A comprehensive, ready-to-use fitness exercise dataset with 1,324 exercises — each with animation GIFs, thumbnail images, muscle group info, equipment data, and full multilingual instructions (English, Spanish, Turkish).**
+**A comprehensive, ready-to-use fitness exercise dataset with 1,324 exercises — each with animation GIFs, thumbnail images, muscle group info, equipment data, and full multilingual instructions (English, Spanish, Italian, Turkish).**
 
 [![Exercises](https://img.shields.io/badge/Exercises-1324-blue?style=flat-square)](data/exercises.json)
 [![Videos](https://img.shields.io/badge/Animation%20GIFs-1324-green?style=flat-square)](videos/)
@@ -65,6 +65,7 @@ Each exercise entry contains:
 | Equipment | Equipment required (or `body weight` for bodyweight) |
 | Instructions (EN) | Step-by-step instructions in English |
 | Instructions (ES) | Step-by-step instructions in Spanish |
+| Instructions (IT) | Step-by-step instructions in Italian |
 | Instructions (TR) | Step-by-step instructions in Turkish |
 | Thumbnail | Static `.jpg` preview image |
 | Animation GIF | `.gif` animation showing the movement |
@@ -81,7 +82,7 @@ A fully client-side exercise explorer with:
 - Live search across all 1,324 exercises
 - Filter by category, equipment, and target muscle
 - Infinite scroll grid with thumbnail previews
-- Click any card to see full details, GIF animation, and instructions in English, Spanish, or Turkish
+- Click any card to see full details, GIF animation, and instructions in English, Spanish, Italian, or Turkish
 
 ### `setup.html` — Developer Setup Guide
 
@@ -173,6 +174,7 @@ Each record in `data/exercises.json` follows this structure:
 | `equipment` | `string` | Required equipment (e.g. `"dumbbell"`, `"body weight"`) |
 | `instructions.en` | `string` | Full step-by-step instructions in English |
 | `instructions.es` | `string` | Full step-by-step instructions in Spanish |
+| `instructions.it` | `string` | Full step-by-step instructions in Italian |
 | `instructions.tr` | `string` | Full step-by-step instructions in Turkish |
 | `muscle_group` | `string` | Primary synergist muscle group |
 | `secondary_muscles` | `array[string]` | Additional muscles involved |
@@ -193,6 +195,7 @@ Each record in `data/exercises.json` follows this structure:
   "instructions": {
     "en": "Lie flat on your back with your knees bent and feet flat on the ground. Place your hands behind your head with your elbows pointing outwards. Engaging your abs, slowly lift your upper body off the ground, curling forward until your torso is at a 45-degree angle. Pause for a moment at the top, then slowly lower your upper body back down to the starting position. Repeat for the desired number of repetitions.",
     "es": "Túmbate sobre tu espalda con las rodillas flexionadas y los pies apoyados en el suelo. Coloca las manos detrás de la cabeza con los codos apuntando hacia afuera. Activando el abdomen, levanta lentamente la parte superior del cuerpo del suelo, curvándote hacia adelante hasta que tu torso forme un ángulo de 45 grados. Haz una pausa por un momento en la parte superior, luego baja lentamente la parte superior del cuerpo de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+    "it": "Sdraiati sulla schiena con le ginocchia piegate e i piedi appoggiati a terra. Metti le mani dietro la testa con i gomiti rivolti verso l'esterno. Coinvolgendo gli addominali, solleva lentamente la parte superiore del corpo da terra, piegandoti in avanti finché il busto non forma un angolo di 45 gradi. Fermati per un momento in alto, quindi abbassa lentamente la parte superiore del corpo fino alla posizione di partenza. Ripetere per il numero di ripetizioni desiderato.",
     "tr": "Sırt üstü yatın, dizlerinizi bükün ve ayaklarınızı yere düz koyun. Ellerinizi başınızın arkasına, dirsekleriniz dışa bakacak şekilde yerleştirin. Karın kaslarınızı kasarak üst vücudunuzu yerden kaldırın ve gövdeniz 45 derecelik açıya gelene kadar öne doğru kıvırın. Bir an için bu pozisyonda bekleyin, ardından yavaşça başlangıç konumuna geri dönün. İstenen tekrar sayısı için hareketi tekrarlayın."
   },
   "muscle_group": "hip flexors",
@@ -318,6 +321,7 @@ print("Categories:", categories)
 ex = exercises[0]
 print(ex["instructions"]["en"])  # English
 print(ex["instructions"]["es"])  # Spanish
+print(ex["instructions"]["it"])  # Italian
 print(ex["instructions"]["tr"])  # Turkish
 ```
 
@@ -363,6 +367,7 @@ const byCategory = exercises.reduce((acc, ex) => {
 const ex = exercises[0];
 console.log(ex.instructions.en); // English
 console.log(ex.instructions.es); // Spanish
+console.log(ex.instructions.it); // Italian
 console.log(ex.instructions.tr); // Turkish
 ```
 
@@ -378,6 +383,7 @@ interface Exercise {
   instructions: {
     en: string;
     es: string;
+    it: string;
     tr: string;
   };
   muscle_group: string;
