@@ -239,15 +239,24 @@ const resultsLabel = computed(() =>
     <aside class="sidebar thin-scroll">
       <div class="sidebar-header">
         <div class="sidebar-logo">Exercise<span>DB</span></div>
-        <NuxtLink class="db-setup-btn" to="/setup" title="Database Setup">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <ellipse cx="8" cy="4" rx="6" ry="2.5" />
-            <path d="M2 4v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V4" />
-            <path d="M2 7v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V7" />
-            <path d="M2 10v2c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5v-2" />
-          </svg>
-          DB Setup
-        </NuxtLink>
+        <div class="sidebar-header-actions">
+          <NuxtLink class="db-setup-btn accent" to="/log" title="My Workout Log">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 2.5h6.5L13 5v8.5H4z" />
+              <path d="M6 6.5h5M6 9h5M6 11.5h3" />
+            </svg>
+            My Log
+          </NuxtLink>
+          <NuxtLink class="db-setup-btn" to="/setup" title="Database Setup">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="8" cy="4" rx="6" ry="2.5" />
+              <path d="M2 4v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V4" />
+              <path d="M2 7v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V7" />
+              <path d="M2 10v2c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5v-2" />
+            </svg>
+            Setup
+          </NuxtLink>
+        </div>
       </div>
 
       <div class="sidebar-body">
@@ -334,6 +343,46 @@ const resultsLabel = computed(() =>
 
         <div class="modal-media">
           <img v-if="gifUrl(active)" class="modal-gif" :src="gifUrl(active)!" :alt="active.name" @error="hideImg" />
+        </div>
+
+        <!-- Workout logging -->
+        <div class="log-block">
+          <div v-if="!logOpen" class="log-actions">
+            <button class="log-open-btn" @click="logOpen = true">
+              <span class="log-plus">＋</span> Log this exercise
+            </button>
+            <NuxtLink v-if="logSaved" class="log-saved-link" to="/log">✓ Saved — view log</NuxtLink>
+          </div>
+
+          <div v-else class="log-form">
+            <div class="log-form-head">
+              <label class="log-date-field">
+                <span>Date</span>
+                <input v-model="logDate" type="date" class="log-input log-date" />
+              </label>
+              <button class="log-cancel" @click="logOpen = false">Cancel</button>
+            </div>
+
+            <div class="log-sets">
+              <div class="log-sets-head">
+                <span class="log-col-idx">Set</span>
+                <span class="log-col">Reps</span>
+                <span class="log-col">Weight (kg)</span>
+                <span class="log-col-x" />
+              </div>
+              <div v-for="(s, i) in logSets" :key="i" class="log-set-row">
+                <span class="log-col-idx">{{ i + 1 }}</span>
+                <input v-model.number="s.reps" type="number" min="0" inputmode="numeric" placeholder="0" class="log-input log-col" />
+                <input v-model.number="s.weight" type="number" min="0" step="0.5" inputmode="decimal" placeholder="0" class="log-input log-col" />
+                <button class="log-col-x log-remove" :disabled="logSets.length === 1" aria-label="Remove set" @click="removeSetRow(i)">×</button>
+              </div>
+              <button class="log-add-set" @click="addSetRow">＋ Add set</button>
+            </div>
+
+            <input v-model="logNotes" type="text" class="log-input log-notes" placeholder="Notes (optional)" maxlength="140" />
+
+            <button class="log-save" :disabled="!canSaveLog" @click="saveLog">Save to my log</button>
+          </div>
         </div>
 
         <div class="modal-meta">
@@ -443,6 +492,11 @@ const resultsLabel = computed(() =>
   gap: 4px;
 }
 
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .db-setup-btn {
   display: flex;
   align-items: center;
@@ -457,6 +511,14 @@ const resultsLabel = computed(() =>
   transition: border-color 0.15s, color 0.15s, background 0.15s;
   white-space: nowrap;
   text-decoration: none;
+}
+.db-setup-btn.accent {
+  border-color: #ff4f00;
+  color: #ff4f00;
+  background: rgba(255, 79, 0, 0.08);
+}
+.db-setup-btn.accent:hover {
+  background: rgba(255, 79, 0, 0.16);
 }
 .db-setup-btn svg {
   width: 13px;
@@ -956,6 +1018,160 @@ const resultsLabel = computed(() =>
   font-size: 13px;
   line-height: 1.55;
   color: #71717a;
+}
+
+/* ── Log block (in modal) ── */
+.log-block {
+  padding: 14px 18px 0;
+}
+.log-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.log-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  background: #ff4f00;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: filter 0.15s;
+}
+.log-open-btn:hover {
+  filter: brightness(0.94);
+}
+.log-plus {
+  font-size: 15px;
+  line-height: 1;
+}
+.log-saved-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #16a34a;
+  text-decoration: none;
+}
+.log-saved-link:hover {
+  text-decoration: underline;
+}
+.log-form {
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  padding: 14px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.log-form-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.log-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.log-cancel {
+  font-size: 12px;
+  color: #71717a;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.log-cancel:hover {
+  color: #111;
+}
+.log-input {
+  padding: 8px 10px;
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #111;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.log-input:focus {
+  border-color: #ff4f00;
+}
+.log-date {
+  max-width: 170px;
+}
+.log-sets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.log-sets-head,
+.log-set-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 1fr 28px;
+  gap: 8px;
+  align-items: center;
+}
+.log-sets-head {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a1a1aa;
+  padding: 0 2px;
+}
+.log-col-idx {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #71717a;
+}
+.log-remove {
+  font-size: 18px;
+  line-height: 1;
+  color: #a1a1aa;
+}
+.log-remove:hover:not(:disabled) {
+  color: #ef4444;
+}
+.log-remove:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.log-add-set {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff4f00;
+}
+.log-add-set:hover {
+  text-decoration: underline;
+}
+.log-save {
+  padding: 10px 16px;
+  background: #111;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: filter 0.15s, opacity 0.15s;
+}
+.log-save:hover:not(:disabled) {
+  filter: brightness(1.25);
+}
+.log-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ── Responsive ── */
