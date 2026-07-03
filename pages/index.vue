@@ -14,6 +14,8 @@ const LANG_LABELS: Record<string, string> = {
 const LANG_ORDER = ['en', 'es', 'it', 'tr', 'ru', 'zh'] as const
 
 const { gifUrl, thumbUrl } = useMedia()
+const { addEntry, load: loadLog } = useWorkoutLog()
+onMounted(loadLog)
 
 // ── Filter options (SSR) ──────────────────────────────
 const { data: filterData } = await useFetch<FilterOptions>('/api/filters')
@@ -135,9 +137,54 @@ const secondaryMuscles = computed(() => {
 function openModal(ex: Exercise) {
   active.value = ex
   activeLang.value = LANG_ORDER.find((c) => (ex.instruction_steps?.[c]?.length ?? 0) > 0) ?? 'en'
+  resetLogForm()
 }
 function closeModal() {
   active.value = null
+}
+
+// ── Workout logging (inside modal) ────────────────────
+const logOpen = ref(false)
+const logDate = ref(todayISODate())
+const logNotes = ref('')
+const logSets = ref<{ reps: number | null; weight: number | null }[]>([{ reps: null, weight: null }])
+const logSaved = ref(false)
+
+function resetLogForm() {
+  logOpen.value = false
+  logDate.value = todayISODate()
+  logNotes.value = ''
+  logSets.value = [{ reps: null, weight: null }]
+  logSaved.value = false
+}
+function addSetRow() {
+  const last = logSets.value[logSets.value.length - 1]
+  logSets.value.push({ reps: last?.reps ?? null, weight: last?.weight ?? null })
+}
+function removeSetRow(i: number) {
+  if (logSets.value.length > 1) logSets.value.splice(i, 1)
+}
+const canSaveLog = computed(() =>
+  logSets.value.some((s) => (s.reps ?? 0) > 0)
+)
+function saveLog() {
+  const ex = active.value
+  if (!ex || !canSaveLog.value) return
+  const sets = logSets.value
+    .filter((s) => (s.reps ?? 0) > 0)
+    .map((s) => ({ reps: Number(s.reps) || 0, weight: Number(s.weight) || 0 }))
+  addEntry({
+    date: logDate.value || todayISODate(),
+    exerciseId: ex.id,
+    name: ex.name,
+    category: ex.category,
+    equipment: ex.equipment,
+    target: ex.target,
+    sets,
+    notes: logNotes.value.trim() || undefined
+  })
+  logSaved.value = true
+  logOpen.value = false
 }
 
 watch(active, (ex) => {
