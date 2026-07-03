@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+  body {
+    @apply bg-base text-ink font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+@layer utilities {
+  /* Thin scrollbars, matching the original design */
+  .thin-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .thin-scroll::-webkit-scrollbar-thumb {
+    @apply bg-line-hover rounded;
+  }
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Card GIF crossfade */
+  .card-media:hover .card-gif {
+    opacity: 1;
+  }
+  .card-media .card-gif {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f1 25%, #e7e7ea 37%, #f0f0f1 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+/* Spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  border: 2px solid var(--tw-ring-offset-color, #e4e4e7);
+  border-top-color: #ff4f00;
+  border-radius: 9999px;
+  animation: spin 0.7s linear infinite;
+}
