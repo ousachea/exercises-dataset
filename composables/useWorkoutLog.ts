@@ -22,8 +22,14 @@ export interface Profile {
   weightKg: number | null
 }
 
+export interface WeighIn {
+  date: string // YYYY-MM-DD
+  weightKg: number
+}
+
 const ENTRIES_KEY = 'nuxt-workout:entries:v1'
 const PROFILE_KEY = 'nuxt-workout:profile:v1'
+const WEIGHTS_KEY = 'nuxt-workout:weights:v1'
 
 const DEFAULT_PROFILE: Profile = { age: 28, heightCm: 170, weightKg: 83.5 }
 
@@ -48,6 +54,7 @@ function makeId(): string {
 export function useWorkoutLog() {
   const entries = useState<WorkoutEntry[]>('workout-entries', () => [])
   const profile = useState<Profile>('workout-profile', () => ({ ...DEFAULT_PROFILE }))
+  const weighIns = useState<WeighIn[]>('workout-weights', () => [])
   const hydrated = useState<boolean>('workout-hydrated', () => false)
 
   function load() {
@@ -60,6 +67,11 @@ export function useWorkoutLog() {
       }
       const rawProfile = localStorage.getItem(PROFILE_KEY)
       if (rawProfile) profile.value = { ...DEFAULT_PROFILE, ...JSON.parse(rawProfile) }
+      const rawWeights = localStorage.getItem(WEIGHTS_KEY)
+      if (rawWeights) {
+        const parsed = JSON.parse(rawWeights)
+        if (Array.isArray(parsed)) weighIns.value = parsed
+      }
     } catch (err) {
       console.warn('[workout-log] failed to read localStorage', err)
     }
@@ -94,8 +106,30 @@ export function useWorkoutLog() {
     persistProfile()
   }
 
+  function persistWeighIns() {
+    if (!import.meta.client) return
+    localStorage.setItem(WEIGHTS_KEY, JSON.stringify(weighIns.value))
+  }
+
+  /** Record body weight for a date (one entry per day — same-day logs overwrite). */
+  function addWeighIn(date: string, weightKg: number) {
+    const next = weighIns.value.filter((w) => w.date !== date)
+    next.push({ date, weightKg })
+    next.sort((a, b) => (a.date < b.date ? -1 : 1))
+    weighIns.value = next
+    persistWeighIns()
+    // Keep the profile's current weight (and BMI) in sync with the latest weigh-in
+    const latest = next[next.length - 1]
+    if (latest) updateProfile({ weightKg: latest.weightKg })
+  }
+
+  function deleteWeighIn(date: string) {
+    weighIns.value = weighIns.value.filter((w) => w.date !== date)
+    persistWeighIns()
+  }
+
   /** Restore a backup produced by the log page's Export button. */
-  function importAll(data: { entries?: unknown; profile?: unknown }) {
+  function importAll(data: { entries?: unknown; profile?: unknown; weighIns?: unknown }) {
     if (Array.isArray(data.entries)) {
       entries.value = data.entries as WorkoutEntry[]
       persistEntries()
@@ -103,6 +137,10 @@ export function useWorkoutLog() {
     if (data.profile && typeof data.profile === 'object') {
       profile.value = { ...DEFAULT_PROFILE, ...(data.profile as Partial<Profile>) }
       persistProfile()
+    }
+    if (Array.isArray(data.weighIns)) {
+      weighIns.value = data.weighIns as WeighIn[]
+      persistWeighIns()
     }
   }
 
@@ -164,6 +202,9 @@ export function useWorkoutLog() {
     addEntry,
     deleteEntry,
     updateProfile,
+    weighIns,
+    addWeighIn,
+    deleteWeighIn,
     importAll,
     bmi,
     entryVolume,

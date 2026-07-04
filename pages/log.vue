@@ -4,6 +4,7 @@ useHead({ title: 'My Workout Log — ExerciseDB' })
 const {
   entries,
   profile,
+  weighIns,
   hydrated,
   load,
   updateProfile,
@@ -68,7 +69,11 @@ const importInput = ref<HTMLInputElement | null>(null)
 const importError = ref(false)
 
 function exportBackup() {
-  const payload = JSON.stringify({ profile: profile.value, entries: entries.value }, null, 2)
+  const payload = JSON.stringify(
+    { profile: profile.value, entries: entries.value, weighIns: weighIns.value },
+    null,
+    2
+  )
   const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }))
   const a = document.createElement('a')
   a.href = url
@@ -115,7 +120,7 @@ async function onImportFile(e: Event) {
           <span class="pstat-label">Height</span>
         </div>
         <div class="pstat">
-          <span class="pstat-value">{{ profile.weightKg ?? '—' }}<small v-if="profile.weightKg">kg</small></span>
+          <span class="pstat-value">{{ profile.weightKg?.toFixed(1) ?? '—' }}<small v-if="profile.weightKg">kg</small></span>
           <span class="pstat-label">Weight</span>
         </div>
         <div class="pstat pstat-bmi">
@@ -143,6 +148,9 @@ async function onImportFile(e: Event) {
         </div>
       </div>
     </section>
+
+    <!-- Weight progress -->
+    <WeightProgress />
 
     <!-- Summary stats -->
     <section class="summary-row">
