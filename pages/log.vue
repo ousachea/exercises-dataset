@@ -131,6 +131,9 @@ function topSet(sets: { reps: number; weight: number }[]): string {
       </div>
     </section>
 
+    <!-- Weekly plan -->
+    <WeightLossPlan />
+
     <!-- History -->
     <section class="history">
       <h2 class="history-heading">History</h2>

@@ -25,7 +25,9 @@ const targets = computed(() => filterData.value?.targets ?? [])
 const grandTotal = computed(() => filterData.value?.total ?? 0)
 
 // ── State ─────────────────────────────────────────────
-const search = ref('')
+// Support /?q=… deep links (e.g. from the workout plan on /log)
+const route = useRoute()
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const selected = reactive({
   category: new Set<string>(),
   equipment: new Set<string>(),
@@ -249,17 +251,7 @@ const resultsLabel = computed(() =>
               <path d="M6 6.5h5M6 9h5M6 11.5h3" />
             </svg>
             My Log
-          </NuxtLink>
-          <NuxtLink class="db-setup-btn" to="/setup" title="Database Setup">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <ellipse cx="8" cy="4" rx="6" ry="2.5" />
-              <path d="M2 4v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V4" />
-              <path d="M2 7v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V7" />
-              <path d="M2 10v2c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5v-2" />
-            </svg>
-            Setup
-          </NuxtLink>
-        </div>
+          </NuxtLink>        </div>
       </div>
       <div class="mobile-topbar-row">
         <div class="search-wrapper">
@@ -298,17 +290,7 @@ const resultsLabel = computed(() =>
               <path d="M6 6.5h5M6 9h5M6 11.5h3" />
             </svg>
             My Log
-          </NuxtLink>
-          <NuxtLink class="db-setup-btn" to="/setup" title="Database Setup">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <ellipse cx="8" cy="4" rx="6" ry="2.5" />
-              <path d="M2 4v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V4" />
-              <path d="M2 7v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V7" />
-              <path d="M2 10v2c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5v-2" />
-            </svg>
-            Setup
-          </NuxtLink>
-        </div>
+          </NuxtLink>        </div>
       </div>
 
       <div class="sidebar-body">
