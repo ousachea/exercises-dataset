@@ -1,0 +1,10 @@
+# Nuxt 3 SSR on Netlify: `npm run build` with the auto-detected "netlify"
+# Nitro preset emits static assets to dist/ and the API/SSR handler to
+# .netlify/functions-internal/. The API routes need that serverless function,
+# so this site must be deployed via a build — not a static drag-and-drop.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

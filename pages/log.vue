@@ -178,7 +178,7 @@ function topSet(sets: { reps: number; weight: number }[]): string {
   max-width: 760px;
   margin: 0 auto;
   padding: 24px 20px 64px;
-  height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
 }
 .log-header {
@@ -479,11 +479,39 @@ function topSet(sets: { reps: number; weight: number }[]): string {
 }
 
 @media (max-width: 560px) {
+  .log-page {
+    padding: 18px 14px 48px;
+  }
   .profile-stats {
     grid-template-columns: repeat(2, 1fr);
   }
   .profile-form {
     grid-template-columns: 1fr 1fr;
+  }
+  .summary-row {
+    gap: 8px;
+  }
+  .summary-card {
+    padding: 12px;
+  }
+  .summary-value {
+    font-size: 18px;
+  }
+  /* Stack entries: stats move below the sets instead of squeezing beside them */
+  .log-entry {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .entry-side {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+    border-top: 1px dashed #e4e4e7;
+    padding-top: 10px;
+  }
+  .entry-delete {
+    margin-top: 0;
+    margin-left: auto;
   }
 }
 </style>

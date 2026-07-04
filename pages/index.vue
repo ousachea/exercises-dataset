@@ -39,6 +39,7 @@ const page = ref(1)
 const totalPages = ref(1)
 const loading = ref(true)
 const hovered = reactive(new Set<string>())
+const filtersOpen = ref(false)
 
 const hasMore = computed(() => page.value < totalPages.value)
 
@@ -187,14 +188,16 @@ function saveLog() {
   logOpen.value = false
 }
 
-watch(active, (ex) => {
+watch([active, filtersOpen], ([ex, open]) => {
   if (import.meta.client) {
-    document.body.style.overflow = ex ? 'hidden' : ''
+    document.body.style.overflow = ex || open ? 'hidden' : ''
   }
 })
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') closeModal()
+  if (e.key !== 'Escape') return
+  if (active.value) closeModal()
+  else filtersOpen.value = false
 }
 
 // Hide a broken image (e.g. the one exercise the mirror is missing) so the
@@ -235,8 +238,57 @@ const resultsLabel = computed(() =>
 
 <template>
   <div class="app-shell">
+    <!-- Mobile top bar -->
+    <header class="mobile-topbar">
+      <div class="mobile-topbar-row">
+        <div class="sidebar-logo">Exercise<span>DB</span></div>
+        <div class="sidebar-header-actions">
+          <NuxtLink class="db-setup-btn accent" to="/log" title="My Workout Log">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 2.5h6.5L13 5v8.5H4z" />
+              <path d="M6 6.5h5M6 9h5M6 11.5h3" />
+            </svg>
+            My Log
+          </NuxtLink>
+          <NuxtLink class="db-setup-btn" to="/setup" title="Database Setup">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="8" cy="4" rx="6" ry="2.5" />
+              <path d="M2 4v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V4" />
+              <path d="M2 7v3c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5V7" />
+              <path d="M2 10v2c0 1.38 2.69 2.5 6 2.5s6-1.12 6-2.5v-2" />
+            </svg>
+            Setup
+          </NuxtLink>
+        </div>
+      </div>
+      <div class="mobile-topbar-row">
+        <div class="search-wrapper">
+          <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="6.5" cy="6.5" r="4.5" />
+            <path d="M10.5 10.5L14 14" stroke-linecap="round" />
+          </svg>
+          <input v-model="search" type="search" class="search-box" placeholder="Search exercises…" autocomplete="off" />
+          <button v-show="search" class="search-clear visible" aria-label="Clear search" @click="search = ''">×</button>
+        </div>
+        <button class="filter-toggle" :class="{ engaged: activeBadges.length }" @click="filtersOpen = true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3.5h12M4.5 8h7M7 12.5h2" />
+          </svg>
+          Filters
+          <span v-if="activeBadges.length" class="filter-toggle-count">{{ activeBadges.length }}</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Drawer backdrop (mobile) -->
+    <div class="drawer-backdrop" :class="{ open: filtersOpen }" @click="filtersOpen = false" />
+
     <!-- Sidebar -->
-    <aside class="sidebar thin-scroll">
+    <aside class="sidebar thin-scroll" :class="{ open: filtersOpen }">
+      <div class="drawer-head">
+        <span class="drawer-title">Filters</span>
+        <button class="modal-close" aria-label="Close filters" @click="filtersOpen = false">✕</button>
+      </div>
       <div class="sidebar-header">
         <div class="sidebar-logo">Exercise<span>DB</span></div>
         <div class="sidebar-header-actions">
@@ -273,6 +325,11 @@ const resultsLabel = computed(() =>
         <FilterSection title="Category" :values="categories" :active="selected.category" @toggle="(v) => toggleFacet('category', v)" />
         <FilterSection title="Equipment" :values="equipment" :active="selected.equipment" :initial-limit="10" @toggle="(v) => toggleFacet('equipment', v)" />
         <FilterSection title="Target Muscle" :values="targets" :active="selected.target" @toggle="(v) => toggleFacet('target', v)" />
+      </div>
+      <div class="drawer-footer">
+        <button class="drawer-apply" @click="filtersOpen = false">
+          Show {{ total.toLocaleString() }} exercise{{ total === 1 ? '' : 's' }}
+        </button>
       </div>
     </aside>
 
@@ -456,6 +513,14 @@ const resultsLabel = computed(() =>
   overflow: hidden;
 }
 
+/* Mobile-only chrome, hidden on desktop */
+.mobile-topbar,
+.drawer-backdrop,
+.drawer-head,
+.drawer-footer {
+  display: none;
+}
+
 /* ── Sidebar ── */
 .sidebar {
   background: #fff;
@@ -585,7 +650,8 @@ const resultsLabel = computed(() =>
   flex-direction: column;
 }
 .results-bar {
-  padding: 14px 20px 10px;
+  /* Horizontal padding grows past 1480px so its content stays aligned with the centered grid */
+  padding: 14px max(20px, calc((100% - 1480px) / 2 + 20px)) 10px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -643,6 +709,9 @@ const resultsLabel = computed(() =>
 .grid-wrapper {
   padding: 16px 20px 32px;
   flex: 1;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
 }
 .exercise-grid {
   display: grid;
@@ -1174,27 +1243,172 @@ const resultsLabel = computed(() =>
   cursor: not-allowed;
 }
 
-/* ── Responsive ── */
+/* ── Responsive: large desktop ── */
+@media (min-width: 1440px) {
+  .app-shell {
+    grid-template-columns: 288px 1fr;
+  }
+  .sidebar-body {
+    padding: 14px 16px 28px;
+  }
+  .exercise-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* ── Responsive: mobile ── */
 @media (max-width: 768px) {
   .app-shell {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
     height: 100dvh;
   }
-  .sidebar {
-    height: auto;
-    max-height: 45vh;
-    border-right: none;
+
+  /* Compact sticky top bar: logo + nav, then search + filter toggle */
+  .mobile-topbar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #fff;
     border-bottom: 1px solid #e4e4e7;
   }
+  .mobile-topbar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .mobile-topbar .search-wrapper {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  .filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border: 1px solid #e4e4e7;
+    border-radius: 10px;
+    background: #f4f4f5;
+    color: #3f3f46;
+    font-size: 13px;
+    font-weight: 600;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .filter-toggle.engaged {
+    border-color: #ff4f00;
+    color: #ff4f00;
+    background: rgba(255, 79, 0, 0.08);
+  }
+  .filter-toggle svg {
+    width: 14px;
+    height: 14px;
+  }
+  .filter-toggle-count {
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: #ff4f00;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Sidebar becomes an off-canvas filter drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(340px, 88vw);
+    height: 100dvh;
+    z-index: 120;
+    border-right: 1px solid #e4e4e7;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .sidebar-header {
+    display: none; /* logo + nav live in the top bar on mobile */
+  }
+  .sidebar-body .search-wrapper {
+    display: none; /* search lives in the top bar on mobile */
+  }
+  .drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e4e4e7;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+  .drawer-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+  }
+  .drawer-footer {
+    display: block;
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: #fff;
+    border-top: 1px solid #e4e4e7;
+  }
+  .drawer-apply {
+    width: 100%;
+    padding: 12px 16px;
+    background: #ff4f00;
+    color: #fff;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 110;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .drawer-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .main-content {
     height: auto;
     flex: 1;
+    min-height: 0;
+  }
+  .results-bar {
+    padding: 10px 14px 8px;
+  }
+  .grid-wrapper {
+    padding: 12px 14px 32px;
   }
   .exercise-grid {
     grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
     gap: 10px;
   }
+
   .modal-overlay {
     align-items: flex-end;
     padding: 0;
@@ -1203,6 +1417,7 @@ const resultsLabel = computed(() =>
     width: 100%;
     max-height: 92dvh;
     border-radius: 18px 18px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
   .muscles-grid {
     grid-template-columns: 1fr;
@@ -1212,6 +1427,9 @@ const resultsLabel = computed(() =>
   .exercise-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
+  }
+  .modal-title {
+    font-size: 16px;
   }
 }
 </style>

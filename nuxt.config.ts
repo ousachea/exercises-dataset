@@ -2,8 +2,16 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
+  devServer: {
+    port: 4000,
+  },
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
+  nitro: {
+    // Bundle the dataset into the server build so API routes can read it on
+    // serverless hosts (Netlify/Vercel) where the repo isn't on disk.
+    serverAssets: [{ baseName: 'data', dir: '../data' }]
+  },
   runtimeConfig: {
     // Path to the dataset, read by server routes. Override with NUXT_DATA_FILE.
     dataFile: 'data/exercises.json',

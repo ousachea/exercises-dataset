@@ -6,13 +6,23 @@ let cache: Exercise[] | null = null
 let indexCache: WeakMap<Exercise, string> | null = null
 
 /**
- * Load and cache the full dataset from disk. The file lives at the path given
- * by runtimeConfig.dataFile (default `data/exercises.json`), resolved against
- * the process working directory so it works in dev and in a built server.
+ * Load and cache the full dataset. Files under `data/` ship as Nitro server
+ * assets (see nuxt.config), so they are readable even inside serverless
+ * bundles (e.g. Netlify functions) where the repo isn't on disk. Any other
+ * path given via NUXT_DATA_FILE falls back to a plain filesystem read
+ * resolved against the process working directory.
  */
 export async function loadExercises(): Promise<Exercise[]> {
   if (cache) return cache
   const { dataFile } = useRuntimeConfig()
+  if (dataFile.startsWith('data/')) {
+    const asset = await useStorage('assets:data').getItemRaw(dataFile.slice('data/'.length))
+    if (asset != null) {
+      const text = typeof asset === 'string' ? asset : new TextDecoder().decode(asset)
+      cache = JSON.parse(text) as Exercise[]
+      return cache
+    }
+  }
   const path = resolve(process.cwd(), dataFile)
   const raw = await readFile(path, 'utf-8')
   cache = JSON.parse(raw) as Exercise[]
