@@ -5,8 +5,59 @@ export default defineNuxtConfig({
   devServer: {
     port: 4000,
   },
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: ['@nuxtjs/tailwindcss', '@vite-pwa/nuxt'],
   css: ['~/assets/css/main.css'],
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'ExerciseDB — Workout Tracker',
+      short_name: 'ExerciseDB',
+      description: 'Exercise library and personal workout log with a weekly weight-loss plan.',
+      theme_color: '#ff4f00',
+      background_color: '#f4f4f5',
+      display: 'standalone',
+      start_url: '/',
+      icons: [
+        { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ]
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+      navigateFallback: null,
+      runtimeCaching: [
+        {
+          // Visited pages (SSR HTML) — fresh when online, cached copy offline
+          urlPattern: /^https?:\/\/[^/]+\/(log|setup)?$/,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'pages',
+            expiration: { maxEntries: 10, maxAgeSeconds: 7 * 24 * 3600 }
+          }
+        },
+        {
+          // Exercise data API
+          urlPattern: /\/api\/(exercises|filters)/,
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'api',
+            expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 3600 }
+          }
+        },
+        {
+          // Exercise GIFs from the CDN mirror
+          urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'exercise-media',
+            expiration: { maxEntries: 500, maxAgeSeconds: 60 * 24 * 3600 },
+            cacheableResponse: { statuses: [0, 200] }
+          }
+        }
+      ]
+    }
+  },
   nitro: {
     // Bundle the dataset into the server build so API routes can read it on
     // serverless hosts (Netlify/Vercel) where the repo isn't on disk.
@@ -31,9 +82,11 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: 'ExerciseDB — Exercise Library',
+      link: [{ rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'theme-color', content: '#ff4f00' },
         {
           name: 'description',
           content:

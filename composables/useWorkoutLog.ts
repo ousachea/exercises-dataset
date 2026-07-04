@@ -94,6 +94,18 @@ export function useWorkoutLog() {
     persistProfile()
   }
 
+  /** Restore a backup produced by the log page's Export button. */
+  function importAll(data: { entries?: unknown; profile?: unknown }) {
+    if (Array.isArray(data.entries)) {
+      entries.value = data.entries as WorkoutEntry[]
+      persistEntries()
+    }
+    if (data.profile && typeof data.profile === 'object') {
+      profile.value = { ...DEFAULT_PROFILE, ...(data.profile as Partial<Profile>) }
+      persistProfile()
+    }
+  }
+
   // ── Derived stats ──────────────────────────────────────
   const bmi = computed(() => {
     const { heightCm, weightKg } = profile.value
@@ -152,6 +164,7 @@ export function useWorkoutLog() {
     addEntry,
     deleteEntry,
     updateProfile,
+    importAll,
     bmi,
     entryVolume,
     totalVolume,

@@ -2,10 +2,12 @@
 useHead({ title: 'My Workout Log — ExerciseDB' })
 
 const {
+  entries,
   profile,
   hydrated,
   load,
   updateProfile,
+  importAll,
   deleteEntry,
   entryVolume,
   bmi,
@@ -59,6 +61,33 @@ function topSet(sets: { reps: number; weight: number }[]): string {
   const best = [...sets].sort((a, b) => b.weight - a.weight || b.reps - a.reps)[0]
   if (!best) return ''
   return best.weight > 0 ? `${best.weight} kg × ${best.reps}` : `${best.reps} reps`
+}
+
+// ── Backup ────────────────────────────────────────────
+const importInput = ref<HTMLInputElement | null>(null)
+const importError = ref(false)
+
+function exportBackup() {
+  const payload = JSON.stringify({ profile: profile.value, entries: entries.value }, null, 2)
+  const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `workout-log-${todayISODate()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function onImportFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  importError.value = false
+  try {
+    importAll(JSON.parse(await file.text()))
+  } catch {
+    importError.value = true
+  }
 }
 </script>
 
@@ -136,7 +165,15 @@ function topSet(sets: { reps: number; weight: number }[]): string {
 
     <!-- History -->
     <section class="history">
-      <h2 class="history-heading">History</h2>
+      <div class="history-head">
+        <h2 class="history-heading">History</h2>
+        <div class="backup-actions">
+          <button class="backup-btn" title="Download your log as a JSON file" @click="exportBackup">Export</button>
+          <button class="backup-btn" title="Restore a previously exported log" @click="importInput?.click()">Import</button>
+          <input ref="importInput" type="file" accept="application/json,.json" class="backup-file" @change="onImportFile" />
+        </div>
+      </div>
+      <p v-if="importError" class="backup-error">That file doesn't look like a log backup.</p>
 
       <div v-if="hydrated && byDate.length === 0" class="log-empty">
         <p class="log-empty-emoji">🏋️</p>
@@ -351,13 +388,44 @@ function topSet(sets: { reps: number; weight: number }[]): string {
 }
 
 /* History */
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
 .history-heading {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #a1a1aa;
-  margin-bottom: 14px;
+}
+.backup-actions {
+  display: flex;
+  gap: 6px;
+}
+.backup-btn {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #71717a;
+  padding: 4px 10px;
+  border: 1px solid #e4e4e7;
+  border-radius: 7px;
+  background: #fff;
+  transition: border-color 0.15s, color 0.15s;
+}
+.backup-btn:hover {
+  border-color: #ff4f00;
+  color: #ff4f00;
+}
+.backup-file {
+  display: none;
+}
+.backup-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin: -6px 0 12px;
 }
 .log-empty {
   text-align: center;

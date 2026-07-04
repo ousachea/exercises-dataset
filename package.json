@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.12.2",
+    "@vite-pwa/nuxt": "^1.1.1",
     "nuxt": "^3.14.0"
   }
 }
